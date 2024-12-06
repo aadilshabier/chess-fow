@@ -21,6 +21,7 @@ static const int borderThickness = 10;
 static const Color whiteCellColor = WHITE;
 static const Color blackCellColor = BROWN;
 static const Color borderColor = DARKBROWN;
+static const Color selectedColor = (Color){135, 60, 190, 120};
 
 static Board board;
 static bool cellSelected = false;
@@ -90,6 +91,10 @@ void DrawPlayScreen()
 			Color color = ((i + j) % 2) ? blackCellColor : whiteCellColor;
 			DrawRectangleRec(board.cells[i][j].rect, color);
 			DrawPiece(&board.cells[i][j]);
+			// tint if selected
+			if (sourceCell == &board.cells[i][j]) {
+				DrawRectangleRec(board.cells[i][j].rect, selectedColor);
+			}
 		}
 	}
 }
