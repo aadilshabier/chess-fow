@@ -1,5 +1,7 @@
 #include "board.h"
 
+#include <stddef.h>
+
 #include "playscreen.h"
 
 extern Texture2D spriteTexture;
@@ -65,4 +67,36 @@ void DrawPiece(const Cell *cell)
 	Rectangle source = {i*cellSize, j*cellSize, cellSize, cellSize};
 	Vector2 pos = {cell->rect.x, cell->rect.y};
 	DrawTextureRec(spriteTexture, source, pos, WHITE);
+}
+
+Cell *findPointCell(Board *board, Vector2 point)
+{
+	Cell *result = NULL;
+	for (int i=0; i<8; i++) {
+		for (int j=0; j<8; j++) {
+			if (CheckCollisionPointRec(point, board->cells[i][j].rect)) {
+				result = &board->cells[i][j];
+				goto found;
+			}
+		}
+	}
+ found:
+	return result;
+}
+
+void PlacePiece(Cell *cell, Player player, Piece piece)
+{
+	cell->player = player;
+	cell->piece = piece;
+}
+
+void RemovePiece(Cell *cell)
+{
+	PlacePiece(cell, PLAYER_NONE, PIECE_NONE);
+}
+
+void MovePiece(Cell *source, Cell *target)
+{
+	PlacePiece(target, source->player, source->piece);
+	RemovePiece(source);
 }

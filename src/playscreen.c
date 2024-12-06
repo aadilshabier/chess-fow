@@ -1,5 +1,7 @@
 #include "playscreen.h"
 
+#include <stddef.h>
+
 #include "raymath.h"
 
 #include "board.h"
@@ -21,7 +23,8 @@ static const Color blackCellColor = BROWN;
 static const Color borderColor = DARKBROWN;
 
 static Board board;
-
+static bool cellSelected = false;
+static Cell *sourceCell = NULL;
 
 void InitPlayScreen()
 {
@@ -41,10 +44,31 @@ void InitPlayScreen()
 			board.cells[i][j].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
 		}
 	}
+
+	cellSelected = false;
+	sourceCell = NULL;
 }
 
 void UpdatePlayScreen()
 {
+	if (!cellSelected && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		Vector2 mousePos = GetMousePosition();
+		sourceCell = findPointCell(&board, mousePos);
+		if (sourceCell->player == PLAYER_NONE || sourceCell->piece == PIECE_NONE) {
+			sourceCell = NULL;
+		}
+		if (sourceCell) {
+			cellSelected = true;
+		}
+	} else if (cellSelected && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		Vector2 mousePos = GetMousePosition();
+	    Cell *targetCell = findPointCell(&board, mousePos);
+
+		MovePiece(sourceCell, targetCell);
+
+		cellSelected = false;
+		sourceCell = NULL;
+	}
 }
 
 void DrawPlayScreen()
@@ -68,7 +92,4 @@ void DrawPlayScreen()
 			DrawPiece(&board.cells[i][j]);
 		}
 	}
-
-	// Draw Pieces
-	/* DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) */
 }

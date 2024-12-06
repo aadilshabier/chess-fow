@@ -31,8 +31,12 @@ typedef struct Board {
 
 void InitDefaultBoardPieces(Board *board);
 
-void PlacePiece(Board *board, Player player, Piece piece, int x, int y);
+void PlacePiece(Cell *cell, Player player, Piece piece);
+void RemovePiece(Cell *cell);
+void MovePiece(Cell *source, Cell *target);
 
 void DrawPiece(const Cell *cell);
+
+Cell *findPointCell(Board *board, Vector2 point);
 
 #endif // BOARD_H_
