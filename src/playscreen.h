@@ -4,6 +4,7 @@
 #include "raylib.h"
 
 extern Texture2D spriteTexture;
+extern const int cellSize;
 
 void InitPlayScreen();
 void UpdatePlayScreen();
