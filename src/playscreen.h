@@ -3,10 +3,12 @@
 
 #include "raylib.h"
 
+#include "board.h"
+
 extern Texture2D spriteTexture;
 extern const int cellSize;
 
-void InitPlayScreen();
+void InitPlayScreen(Player player);
 void UpdatePlayScreen();
 void DrawPlayScreen();
 

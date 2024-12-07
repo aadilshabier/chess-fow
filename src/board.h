@@ -26,6 +26,7 @@ typedef struct Cell {
 } Cell;
 
 typedef struct Board {
+	enum Player player;
 	struct Cell cells[8][8];
 } Board;
 

@@ -5,6 +5,7 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 
+#include "board.h"
 #include "gamestate.h"
 #include "playscreen.h"
 
@@ -19,6 +20,7 @@ static const int buttonHeight = 100;
 static bool play = false;
 static bool fogOfWar = false;
 static bool multiplayer = false;
+static int playerToggle = 0;
 
 void InitLoadingScreen()
 {
@@ -33,7 +35,7 @@ void UpdateLoadingScreen()
 {
 	if (play) {
 		state = GAME_STATE_PLAY;
-		InitPlayScreen();
+		InitPlayScreen(playerToggle+1);
 	}
 }
 
@@ -50,5 +52,6 @@ void DrawLoadingScreen()
 	    play = true;
 	GuiCheckBox((Rectangle){(screenWidth-buttonWidth)/2, (screenHeight+buttonWidth/2)/2, buttonWidth/4, buttonHeight/2}, "Fog of War", &fogOfWar);
 	GuiCheckBox((Rectangle){(screenWidth-buttonWidth)/2, (screenHeight+buttonWidth)/2, buttonWidth/4, buttonHeight/2}, "Multiplayer", &multiplayer);
+	GuiToggleSlider((Rectangle){(screenWidth-buttonWidth)/2, (screenHeight+3*buttonWidth/2)/2, buttonWidth, buttonHeight/2}, "White;Black", &playerToggle);
 }
 

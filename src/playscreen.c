@@ -27,7 +27,7 @@ static Board board;
 static bool cellSelected = false;
 static Cell *sourceCell = NULL;
 
-void InitPlayScreen()
+void InitPlayScreen(Player player)
 {
 	Image spriteImg = LoadImage(spriteFile);
 	ImageResize(&spriteImg, 6*cellSize, 2*cellSize);
@@ -35,6 +35,7 @@ void InitPlayScreen()
 	UnloadImage(spriteImg);
 
 	// Initialize board
+	board.player = player;
 	InitDefaultBoardPieces(&board);
 	const Vector2 screenSize = {screenWidth, screenHeight};
 	const Vector2 cellSizeV = {cellSize, cellSize};
@@ -42,7 +43,11 @@ void InitPlayScreen()
 	for (int i=0; i<numCells; i++) {
 		for (int j=0; j<numCells; j++) {
 			Vector2 pos = Vector2Add(offset, Vector2Multiply(cellSizeV, (Vector2){j,i}));
-			board.cells[i][j].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
+			if (board.player == PLAYER_WHITE) {
+				board.cells[i][j].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
+			} else if (board.player == PLAYER_BLACK) {
+				board.cells[8-i-1][8-j-1].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
+			}
 		}
 	}
 
