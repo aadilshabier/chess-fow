@@ -40,4 +40,6 @@ void DrawPiece(const Cell *cell);
 
 Cell *findPointCell(Board *board, Vector2 point);
 
+Player otherPlayer(Player player);
+
 #endif // BOARD_H_

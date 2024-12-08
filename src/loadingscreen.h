@@ -3,10 +3,6 @@
 
 #include "raylib.h"
 
-/* extern bool play; */
-/* extern bool fogOfWar; */
-/* extern bool multiplayer; */
-
 void InitLoadingScreen();
 void UpdateLoadingScreen();
 void DrawLoadingScreen();

@@ -98,5 +98,14 @@ void RemovePiece(Cell *cell)
 void MovePiece(Cell *source, Cell *target)
 {
 	PlacePiece(target, source->player, source->piece);
-	RemovePiece(source);
+	if (source != target)
+		RemovePiece(source);
+}
+
+Player otherPlayer(Player player)
+{
+	switch (player) {
+	case PLAYER_WHITE: return PLAYER_BLACK;
+	case PLAYER_BLACK: return PLAYER_WHITE;
+	}
 }
