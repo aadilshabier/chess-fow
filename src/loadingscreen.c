@@ -12,7 +12,6 @@
 // From main.c
 extern const int screenWidth;
 extern const int screenHeight;
-extern enum GameState state;
 extern const Color bgColor;
 extern int multiplayerMode;
 
@@ -23,6 +22,13 @@ static const int buttonHeight = 100;
 static bool play = false;
 static bool fogOfWar = false;
 static int playerToggle = 0;
+
+GameState _LOADINGSTATEOBJ = {
+	.init = &InitLoadingScreen,
+	.update = &UpdateLoadingScreen,
+	.draw = &DrawLoadingScreen,
+	.exit = NULL,
+};
 
 void InitLoadingScreen()
 {
@@ -37,8 +43,11 @@ void InitLoadingScreen()
 void UpdateLoadingScreen()
 {
 	if (play) {
-		state = GAME_STATE_PLAY;
-		InitPlayScreen(playerToggle+1);
+	    currentState = gameStates[GAME_STATE_PLAY];
+		if (currentState->init) {
+			Player player = playerToggle ? PLAYER_BLACK : PLAYER_WHITE;
+		    currentState->init(&player);
+		}
 	}
 }
 
@@ -61,4 +70,3 @@ void DrawLoadingScreen()
 		playerToggle = 0;
 	}
 }
-

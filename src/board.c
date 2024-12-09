@@ -2,9 +2,8 @@
 
 #include <stddef.h>
 
+#include "gamestate.h"
 #include "playscreen.h"
-
-extern Texture2D spriteTexture;
 
 void InitDefaultBoardPieces(struct Board *board)
 {

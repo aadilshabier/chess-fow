@@ -11,7 +11,7 @@
 // From main.c
 extern const int screenWidth;
 extern const int screenHeight;
-extern enum GameState state;
+extern enum GameStateType state;
 extern const Color bgColor;
 extern int multiplayerMode;
 
@@ -30,8 +30,16 @@ static Board board;
 static bool cellSelected = false;
 static Cell *sourceCell = NULL;
 
-void InitPlayScreen(Player player)
+GameState _PLAYSTATEOBJ = {
+	.init = &InitPlayScreen,
+	.update = &UpdatePlayScreen,
+	.draw = &DrawPlayScreen,
+	.exit = NULL,
+};
+
+void InitPlayScreen(void *player_ptr)
 {
+	Player player = *(Player*)player_ptr;
 	Image spriteImg = LoadImage(spriteFile);
 	ImageResize(&spriteImg, 6*cellSize, 2*cellSize);
 	spriteTexture = LoadTextureFromImage(spriteImg);

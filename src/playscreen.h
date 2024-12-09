@@ -4,11 +4,14 @@
 #include "raylib.h"
 
 #include "board.h"
+#include "gamestate.h"
 
 extern Texture2D spriteTexture;
 extern const int cellSize;
 
-void InitPlayScreen(Player player);
+extern GameState _PLAYSTATEOBJ;
+
+void InitPlayScreen(void *player_ptr);
 void UpdatePlayScreen();
 void DrawPlayScreen();
 

@@ -1,5 +1,7 @@
 #include "raylib.h"
 
+#include <stddef.h>
+
 #include "gamestate.h"
 #include "playscreen.h"
 #include "loadingscreen.h"
@@ -9,7 +11,13 @@ const Color bgColor = RAYWHITE;
 const int screenWidth = 800;
 const int screenHeight = 1000;
 
-enum GameState state;
+extern GameState _LOADINGSTATEOBJ;
+
+GameState *gameStates[NUM_GAME_STATES] = {
+	[GAME_STATE_LOAD] = &_LOADINGSTATEOBJ,
+	[GAME_STATE_PLAY] = &_PLAYSTATEOBJ,
+};
+GameState *currentState;
 
 int main(void)
 {
@@ -17,8 +25,9 @@ int main(void)
     InitWindow(screenWidth, screenHeight, "Chess");
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-	state = GAME_STATE_LOAD;
-	InitLoadingScreen();
+	currentState = gameStates[GAME_STATE_LOAD];
+	if (currentState->init)
+		currentState->init(NULL);
 
 	/* state = GAME_STATE_PLAY; */
 	/* InitPlayScreen(); */
@@ -29,31 +38,17 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
-		switch (state) {
-		case GAME_STATE_LOAD:
-			UpdateLoadingScreen(); break;
-		case GAME_STATE_PLAY:
-		    UpdatePlayScreen(); break;
-		default:
-			TraceLog(LOG_ERROR, "State %d not handled for updating!", state);
-			return 1;
+		if (currentState->update) {
+			currentState->update();
 		}
         //----------------------------------------------------------------------------------
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
-		{			
-			switch (state) {
-			case GAME_STATE_LOAD:
-				DrawLoadingScreen(); break;
-			case GAME_STATE_PLAY:
-				DrawPlayScreen(); break;
-			default:
-				TraceLog(LOG_ERROR, "State %d not handled for drawing!", state);
-				return 1;
-			}
-        }
+		if (currentState->draw) {
+			currentState->draw();
+		}
 		EndDrawing();
         //----------------------------------------------------------------------------------
     }
