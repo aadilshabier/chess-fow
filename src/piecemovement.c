@@ -2,6 +2,7 @@
 #include "board.h"
 
 void (*candidateGetters[])(Board *board, int x, int y, Cell *candidates[], int *num_candidates) = {
+	[PIECE_KNIGHT] = &getKnightCandidates,
 	[PIECE_PAWN] = &getPawnCandidates,
 };
 
@@ -43,4 +44,16 @@ void getPawnCandidates(Board *board, int x, int y, Cell *candidates[], int *num_
 		return;
 	}
 	addCandidate(candidates, num_candidates, &board->cells[y_forward][x]);
+}
+
+void getKnightCandidates(Board *board, int x, int y, Cell *candidates[], int *num_candidates) {
+	Player player = board->cells[y][x].player;
+	struct {int x, y; } offset[8] = {{-1, 2}, {1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}};
+	for (int i=0; i < sizeof(offset)/sizeof(offset[0]); i++) {
+		int x_ = x + offset[i].x;
+		int y_ = y + offset[i].y;
+		if (isValidCell(x_, y_) && board->cells[y_][x_].player != player) {
+			addCandidate(candidates, num_candidates, &board->cells[y_][x_]);
+		}
+	}
 }
