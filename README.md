@@ -22,7 +22,7 @@ cmake --build build
 
 ## Description
 
-Multiplayer chess with (upcoming) fog of war mode.
+Chess with (upcoming) fog of war mode.
 
 ## Features
 
