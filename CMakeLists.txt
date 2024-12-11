@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 project(chess-fow)
+set(SERVER_NAME chess-fow-server)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -24,25 +25,15 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
 endif()
 
 # Our Project
-add_executable(${PROJECT_NAME})
 add_subdirectory(src)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
-
-add_custom_command(
-	TARGET ${PROJECT_NAME} POST_BUILD
-	DEPENDS ${PROJECT_NAME})
+set_target_properties(${SERVER_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 
 #set(raylib_VERBOSE 1)
-target_link_libraries(${PROJECT_NAME} raylib)
-
-# Web Configurations
-# if (${PLATFORM} STREQUAL "Web")
-#     # Tell Emscripten to build an example.html file.
-#     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
-#     target_link_options(${PROJECT_NAME} PUBLIC "-sUSE_GLFW=3")
-# endif()
+# target_link_libraries(${PROJECT_NAME} raylib)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)
