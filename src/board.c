@@ -108,3 +108,74 @@ Player otherPlayer(Player player)
 	case PLAYER_BLACK: return PLAYER_WHITE;
 	}
 }
+
+void cellToIdx(const Board *board, const Cell *cell, int *x, int *y)
+{
+	const Cell* base = &board->cells[0][0];
+	size_t position = (cell - base);
+	*x = position % 8;
+	*y = position / 8;
+}
+
+static bool isValidCell(int x, int y)
+{
+	return x >= 0 && y >= 0 && x < 8 && y < 8;
+}
+
+static void getPawnCandidates(Board *board, int x, int y, Cell *candidates[], int *num_candidates)
+{
+	Player player = board->cells[y][x].player;
+	int direction = (player == PLAYER_WHITE) ? -1 : 1;
+	// TODO: for loop instead of this
+	// check 1 step forward
+	int y_forward = y+direction;
+	if (!isValidCell(x, y_forward) || board->cells[y_forward][x].player != PLAYER_NONE) {
+		return;
+	}
+	candidates[*num_candidates] = &board->cells[y_forward][x];
+	(*num_candidates)++;
+
+	// check 2 steps forward if pawn hasn't moved yet
+	y_forward = y+2*direction;
+	int y_base = (player == PLAYER_WHITE) ? 6 : 1;
+	if (y != y_base || !isValidCell(x, y_forward) || board->cells[y_forward][x].player != PLAYER_NONE) {
+		return;
+	}
+	candidates[*num_candidates] = &board->cells[y_forward][x];
+	(*num_candidates)++;
+}
+
+void getCandidates(Board *board, int x, int y, Cell *candidates[], int *num_candidates)
+{
+	*num_candidates = 0;
+
+    Piece piece = board->cells[y][x].piece;
+
+	switch (piece) {
+	case PIECE_PAWN: getPawnCandidates(board, x, y, candidates, num_candidates); break;
+	default: TraceLog(LOG_ERROR, "Not implemented for piece: %d", piece); break;
+	}
+}
+
+void markCandidates(Board *board, int x, int y) {
+	Cell *candidates[64];
+    int num_candidates;
+	getCandidates(board, x, y, candidates, &num_candidates);
+	TraceLog(LOG_INFO, "Marking candidates for (%d, %d)", x, y);
+
+	for (size_t i=0; i<num_candidates; i++) {
+		int x_, y_;
+		cellToIdx(board, candidates[i], &x_, &y_);
+		TraceLog(LOG_INFO, "Candidate %i: (%d,%d)", i+1, x_, y_);
+		candidates[i]->isCandidate = true;
+	}
+}
+
+void unmarkCandidates(Board *board)
+{
+	for (int y=0; y<8; y++) {
+		for (int x=0; x<8; x++) {
+			board->cells[y][x].isCandidate = false;
+		}
+	}
+}

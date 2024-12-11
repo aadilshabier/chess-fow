@@ -25,9 +25,9 @@ static const Color whiteCellColor = WHITE;
 static const Color blackCellColor = BROWN;
 static const Color borderColor = DARKBROWN;
 static const Color selectedColor = (Color){135, 60, 190, 120};
+static const Color candidateColor = (Color){250, 210, 0, 120};
 
 static Board board;
-static bool cellSelected = false;
 static Cell *sourceCell = NULL;
 
 GameState _PLAYSTATEOBJ = {
@@ -62,32 +62,43 @@ void InitPlayScreen(void *player_ptr)
 		}
 	}
 
-	cellSelected = false;
 	sourceCell = NULL;
 }
 
 static void SinglePlayerUpdatePlayScreen()
 {
-	if (!cellSelected && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+	if (!sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		Vector2 mousePos = GetMousePosition();
 		sourceCell = findPointCell(&board, mousePos);
-		if (sourceCell->player != board.player || sourceCell->piece == PIECE_NONE) {
+		if (!sourceCell || sourceCell->player != board.player || sourceCell->piece == PIECE_NONE) {
 			sourceCell = NULL;
 		}
 		if (sourceCell) {
-			cellSelected = true;
+			sourceCell->isSelected = true;
+			int x, y;
+			cellToIdx(&board, sourceCell, &x, &y);
+			markCandidates(&board, x, y);
 		}
-	} else if (cellSelected && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+	} else if (sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		Vector2 mousePos = GetMousePosition();
 	    Cell *targetCell = findPointCell(&board, mousePos);
 
-
 		// cancel move
 		if (sourceCell == targetCell) {
-			cellSelected = false;
+			sourceCell->isSelected = false;
 			sourceCell = NULL;
+			unmarkCandidates(&board);
 			return;
 		}
+
+		/* // check if candidate cell */
+		/* if (targetCell->isCandidate) { */
+		/* 	MovePiece(sourceCell, targetCell); */
+		/* 	board.player = otherPlayer(board.player); */
+		/* 	sourceCell->isSelected = false; */
+		/* 	sourceCell = NULL; */
+		/* 	unmarkCandidates(&board); */
+		/* } */
 
 		// not allowed to move to same color
 		if (sourceCell->player == targetCell->player) {
@@ -97,8 +108,9 @@ static void SinglePlayerUpdatePlayScreen()
 		MovePiece(sourceCell, targetCell);
 		board.player = otherPlayer(board.player);
 
-		cellSelected = false;
+		sourceCell->isSelected = false;
 		sourceCell = NULL;
+		unmarkCandidates(&board);
 	}
 }
 
@@ -144,8 +156,9 @@ void DrawPlayScreen()
 			Color color = ((i + j) % 2) ? blackCellColor : whiteCellColor;
 			DrawRectangleRec(board.cells[i][j].rect, color);
 			DrawPiece(&board.cells[i][j]);
-			// tint if selected
-			if (sourceCell == &board.cells[i][j]) {
+			if (board.cells[i][j].isCandidate) {
+				DrawRectangleRec(board.cells[i][j].rect, candidateColor);
+			} else if (board.cells[i][j].isSelected) {
 				DrawRectangleRec(board.cells[i][j].rect, selectedColor);
 			}
 		}

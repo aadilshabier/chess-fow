@@ -23,6 +23,8 @@ typedef struct Cell {
 	Rectangle rect;
     enum Player player;
 	enum Piece piece;
+	bool isSelected;
+	bool isCandidate;
 } Cell;
 
 typedef struct Board {
@@ -41,5 +43,11 @@ void DrawPiece(const Cell *cell);
 Cell *findPointCell(Board *board, Vector2 point);
 
 Player otherPlayer(Player player);
+
+void cellToIdx(const Board *board, const Cell *cell, int *x, int *y);
+
+void getCandidates(Board *board, int x, int y, Cell *candidates[], int *num_candidates);
+void markCandidates(Board *board, int x, int y);
+void unmarkCandidates(Board *board);
 
 #endif // BOARD_H_
