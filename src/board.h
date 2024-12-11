@@ -17,6 +17,7 @@ typedef enum Piece {
 	PIECE_KNIGHT,
 	PIECE_ROOK,
 	PIECE_PAWN,
+	NUM_PIECES,
 } Piece;
 
 typedef struct Cell {
