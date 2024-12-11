@@ -133,7 +133,7 @@ void getCandidates(Board *board, int x, int y, Cell *candidates[], int *num_cand
 
 void markCandidates(Board *board, int x, int y) {
 	Cell *candidates[64];
-    int num_candidates;
+    int num_candidates = 0;
 	getCandidates(board, x, y, candidates, &num_candidates);
 	TraceLog(LOG_INFO, "Marking candidates for (%d, %d)", x, y);
 

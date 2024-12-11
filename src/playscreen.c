@@ -91,26 +91,14 @@ static void SinglePlayerUpdatePlayScreen()
 			return;
 		}
 
-		/* // check if candidate cell */
-		/* if (targetCell->isCandidate) { */
-		/* 	MovePiece(sourceCell, targetCell); */
-		/* 	board.player = otherPlayer(board.player); */
-		/* 	sourceCell->isSelected = false; */
-		/* 	sourceCell = NULL; */
-		/* 	unmarkCandidates(&board); */
-		/* } */
-
-		// not allowed to move to same color
-		if (sourceCell->player == targetCell->player) {
-			return;
+		// check if candidate cell
+		if (targetCell->isCandidate) {
+			MovePiece(sourceCell, targetCell);
+			board.player = otherPlayer(board.player);
+			sourceCell->isSelected = false;
+			sourceCell = NULL;
+			unmarkCandidates(&board);
 		}
-
-		MovePiece(sourceCell, targetCell);
-		board.player = otherPlayer(board.player);
-
-		sourceCell->isSelected = false;
-		sourceCell = NULL;
-		unmarkCandidates(&board);
 	}
 }
 
