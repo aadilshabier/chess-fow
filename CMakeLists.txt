@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 project(chess-fow)
 set(SERVER_NAME chess-fow-server)
 
+set(CMAKE_C_FLAGS "-Wall -Wextra")
+
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -28,16 +30,14 @@ endif()
 add_subdirectory(src)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}
+  C_STANDARD 11
+)
 set_target_properties(${SERVER_NAME} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}
+  C_STANDARD 11
+)
+
 
 #set(raylib_VERBOSE 1)
-# target_link_libraries(${PROJECT_NAME} raylib)
 
-# Checks if OSX and links appropriate frameworks (Only required on MacOS)
-if (APPLE)
-    target_link_libraries(${PROJECT_NAME} "-framework IOKit")
-    target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
-    target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
-endif()

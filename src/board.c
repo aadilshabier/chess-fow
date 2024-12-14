@@ -107,6 +107,7 @@ Player otherPlayer(Player player)
 	switch (player) {
 	case PLAYER_WHITE: return PLAYER_BLACK;
 	case PLAYER_BLACK: return PLAYER_WHITE;
+	default: return PLAYER_NONE;
 	}
 }
 
@@ -137,7 +138,7 @@ void markCandidates(Board *board, int x, int y) {
 	getCandidates(board, x, y, candidates, &num_candidates);
 	TraceLog(LOG_INFO, "Marking candidates for (%d, %d)", x, y);
 
-	for (size_t i=0; i<num_candidates; i++) {
+	for (int i=0; i<num_candidates; i++) {
 		int x_, y_;
 		cellToIdx(board, candidates[i], &x_, &y_);
 		TraceLog(LOG_INFO, "Candidate %i: (%d,%d)", i+1, x_, y_);
