@@ -1,5 +1,6 @@
 #include "comms_client.h"
 
+#include <arpa/inet.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -11,9 +12,7 @@ dyad_Stream *clientStream = NULL;
 PlayerState playerState = PLAYER_STATE_NONE;
 
 void onConnect(dyad_Event *e) {
-	dyad_setNoDelay(clientStream, true);
-	dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, NULL);
-
+	dyad_setNoDelay(e->stream, true);
 	playerState = PLAYER_STATE_CONNECTED;
 }
 
@@ -27,7 +26,7 @@ static bool expect(const char *name, int expected, int value) {
 
 void onData(dyad_Event *e)
 {
-	uint32_t length = *(uint32_t*)e->data;
+	uint32_t length = ntohl(*(uint32_t*)e->data);
 	if (expect("message length", length,  e->size)) {
 		return;
 	}
@@ -56,9 +55,11 @@ void onData(dyad_Event *e)
 		fprintf(stderr, "Leaving game unimplemented\n");
 	} else if (type == MSG_ERROR){
 		fprintf(stderr, "ERROR: %s\n", message->data);
+	} else {
+		fprintf(stderr, "Shouldn't happen: %d\n", type);
 	}
 }
 
 void onError(dyad_Event *e) {
-	fprintf(stderr, "ERROR: Server: %s\n", e->msg);
+	fprintf(stderr, "ERROR: Client: %s\n", e->msg);
 }

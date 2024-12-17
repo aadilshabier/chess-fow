@@ -16,7 +16,9 @@ int main()
 	srandom((unsigned)time(NULL));
 	dyad_Stream *server = dyad_newStream();
 	dyad_addListener(server, DYAD_EVENT_ERROR,  onError,  NULL);
+	dyad_addListener(server, DYAD_EVENT_LISTEN,  onListen,  NULL);
 	dyad_addListener(server, DYAD_EVENT_ACCEPT, onAccept, &match);
+	dyad_addListener(server, DYAD_EVENT_CLOSE, onClose, &match);
 	if (dyad_listenEx(server, HOST, PORT, 10) < 0) {
 		return 1;
 	}

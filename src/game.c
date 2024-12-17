@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "dyad.h"
 #include "gamestate.h"
 #include "playscreen.h"
 #include "loadingscreen.h"
@@ -22,6 +23,8 @@ GameState *currentState = NULL;
 int main(void)
 {
     // Initialization
+	dyad_init();
+
     InitWindow(screenWidth, screenHeight, "Chess");
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 

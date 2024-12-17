@@ -1,7 +1,9 @@
 #include "comms_server.h"
 
+#include <arpa/inet.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "dyad.h"
 
@@ -13,6 +15,10 @@ PlayerConn makePlayerConn(void)
 		.player = PLAYER_NONE,
 	};
 	return conn;
+}
+
+void onListen(dyad_Event *e) {
+	printf("Server listening on localhost:%d\n", dyad_getPort(e->stream));
 }
 
 void onAccept(dyad_Event *e) {
@@ -35,7 +41,7 @@ void onAccept(dyad_Event *e) {
 	};
 	match->players[match->activePlayers] = player;
 	match->activePlayers++;
-	printf("Player connected: %d\n", dyad_getSocket(player.stream));
+	printf("Player number %d connected: %d\n", match->activePlayers, dyad_getSocket(player.stream));
 	// messages might be small
 	dyad_setNoDelay(player.stream, true);
 	dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, match);
@@ -61,7 +67,7 @@ void onData(dyad_Event *e)
 		return;
 	}
 
-	uint32_t length = *(uint32_t*)e->data;
+	uint32_t length = ntohl(*(uint32_t*)e->data);
 	if (expect("message length", length,  e->size)) {
 		return;
 	}
@@ -105,3 +111,19 @@ void onData(dyad_Event *e)
 void onError(dyad_Event *e) {
 	fprintf(stderr, "ERROR: Server: %s\n", e->msg);
 }
+
+
+void onClose(dyad_Event *e)
+{
+	dyad_Stream *stream = e->stream;
+	Match *match = e->udata;
+	if (match->players[0].stream == stream) {
+		memmove(&match->players[0], &match->players[1], sizeof(match->players[0]));
+		match->activePlayers--;
+	} else if (match->players[1].stream == stream) {
+		match->activePlayers--;
+	} else {
+		return;
+	}
+}
+

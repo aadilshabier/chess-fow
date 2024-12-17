@@ -19,8 +19,12 @@ Message *makeMessage(MessageType type, const void *data)
 		message->length += sizeof(message->update);
 		memcpy(&message->update, data, sizeof(message->update));
 	} else {
-		message->data = strdup((char*)data);
-		message->length += strlen(message->data) + 1;
+		if (data != NULL) {
+			message->data = strdup((char*)data);
+			message->length += strlen(message->data) + 1;
+		} else {
+			message->data = NULL;
+		}
 	}
 	return message;
 }
@@ -38,7 +42,7 @@ void serializeMessage(const Message *message, void *data)
 {
 	static_assert(sizeof(message->length) == 4);
 	*(uint32_t*)data = htonl(message->length);
-	data += sizeof(message->data);
+	data += sizeof(message->length);
 
 	static_assert(sizeof(message->type) == 1);
 	*(uint8_t*)data = message->type;
@@ -48,33 +52,37 @@ void serializeMessage(const Message *message, void *data)
 		memcpy(data, &message->move, sizeof(message->move));
 	} if (message->type == MSG_SEND_UPDATE) {
 		memcpy(data, &message->update, sizeof(message->update));
-	} else {
+	} else if (message->data) {
 	    strcpy(data, message->data);
-		((char*)data)[message->length-1] = 0;
 	}
 }
 
 Message *deSerializeMessage(void *data)
 {
 	Message *message = malloc(sizeof(Message));
-	// read first two fields
-	int offset = sizeof(message->length) + sizeof(message->type);
-	memcpy(message, data, offset);
-	message->length = ntohl(message->length);
+
+	static_assert(sizeof(message->length) == 4);
+	message->length = ntohl(*(uint32_t*)data);
+	data += sizeof(message->length);
+
 	static_assert(sizeof(message->type) == 1);
+	message->type = *(uint8_t*)data;
+	data += sizeof(message->type);
+
+    uint32_t offset = sizeof(message->length) + sizeof(message->type);
 	if (message->type == MSG_SEND_MOVE) {
 		static_assert(sizeof(message->move) == 4);
 		message->move = (Move){
-			.source.x = ntohl(*(uint8_t*)(data+offset+0)),
-			.source.y = ntohl(*(uint8_t*)(data+offset+1)),
-			.target.x = ntohl(*(uint8_t*)(data+offset+2)),
-			.target.y = ntohl(*(uint8_t*)(data+offset+3)),
+			.source.x = ntohl(*(uint8_t*)(data+0)),
+			.source.y = ntohl(*(uint8_t*)(data+1)),
+			.target.x = ntohl(*(uint8_t*)(data+2)),
+			.target.y = ntohl(*(uint8_t*)(data+3)),
 		};
 	} else if (message->type == MSG_SEND_UPDATE) {
 		static_assert(sizeof(message->update) == 1);
-		message->update = *(Update*)(data+offset);
-	} else {
-		message->data = strdup((char*)(data+offset));
+		message->update = *(Update*)(data);
+	} else if (message->length != offset) {
+		message->data = strdup((char*)(data));
 	}
 	
 	return message;

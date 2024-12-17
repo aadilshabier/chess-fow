@@ -41,14 +41,16 @@ static void DrawTextMiddle(const char *text)
 	DrawText(text, (screenWidth-width)/2, screenHeight/2, fontSize, BLACK);
 }
 
+#include <stdio.h>
 void UpdateMultiScreen()
 {
 	dyad_update();
 
 	if (playerState == PLAYER_STATE_NONE) {
-		dyad_newStream();
-		dyad_addListener(clientStream , DYAD_EVENT_ERROR,  onError,  NULL);
+		clientStream = dyad_newStream();
+		dyad_addListener(clientStream, DYAD_EVENT_ERROR,  onError,  NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_CONNECT, onConnect, NULL);
+		dyad_addListener(clientStream, DYAD_EVENT_DATA, onData, NULL);
 
 		if (dyad_connect(clientStream, HOST, PORT) < 0) {
 			// error
