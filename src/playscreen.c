@@ -1,12 +1,14 @@
 #include "playscreen.h"
 
 #include <stddef.h>
-#include "stdio.h"
+#include <string.h>
 
 #include "raymath.h"
 
 #include "board.h"
+#include "comms_client.h"
 #include "loadingscreen.h"
+#include "multiscreen.h"
 
 // From game.c
 extern const int screenWidth;
@@ -28,7 +30,7 @@ static const Color borderColor = DARKBROWN;
 static const Color selectedColor = (Color){135, 60, 190, 120};
 static const Color candidateColor = (Color){250, 210, 0, 120};
 
-static Board board;
+Board board;
 static Cell *sourceCell = NULL;
 
 GameState _PLAYSTATEOBJ = {
@@ -40,15 +42,14 @@ GameState _PLAYSTATEOBJ = {
 
 void InitPlayScreen(void *playerPtr)
 {
-	Player player;
-	player = *(Player*)playerPtr;
 	Image spriteImg = LoadImage(spriteFile);
 	ImageResize(&spriteImg, 6*cellSize, 2*cellSize);
 	spriteTexture = LoadTextureFromImage(spriteImg);
 	UnloadImage(spriteImg);
 
 	// Initialize board
-	board.player = player;
+	board.player = PLAYER_WHITE;
+	clientPlayer = *(Player*)playerPtr;
 	InitDefaultBoardPieces(&board);
 	const Vector2 screenSize = {screenWidth, screenHeight};
 	const Vector2 cellSizeV = {cellSize, cellSize};
@@ -67,7 +68,7 @@ void InitPlayScreen(void *playerPtr)
 	sourceCell = NULL;
 }
 
-static void SinglePlayerUpdatePlayScreen()
+static void LocalPlayerUpdatePlayScreen()
 {
 	if (!sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		Vector2 mousePos = GetMousePosition();
@@ -106,12 +107,61 @@ static void SinglePlayerUpdatePlayScreen()
 
 static void MultiPlayerUpdatePlayScreen()
 {
+	dyad_update();
+	if (board.player != clientPlayer)
+		return;
+	if (!sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		Vector2 mousePos = GetMousePosition();
+		sourceCell = findPointCell(&board, mousePos);
+		if (!sourceCell || sourceCell->player != clientPlayer || sourceCell->piece == PIECE_NONE) {
+			sourceCell = NULL;
+		}
+		if (sourceCell) {
+			sourceCell->isSelected = true;
+			int x, y;
+			cellToIdx(&board, sourceCell, &x, &y);
+			markCandidates(&board, x, y);
+		}
+	} else if (sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		Vector2 mousePos = GetMousePosition();
+	    Cell *targetCell = findPointCell(&board, mousePos);
+
+		// cancel move
+		if (sourceCell == targetCell) {
+			sourceCell->isSelected = false;
+			sourceCell = NULL;
+			unmarkCandidates(&board);
+			return;
+		}
+
+		// check if candidate cell
+		if (targetCell->isCandidate) {
+			MovePiece(sourceCell, targetCell);
+
+			// send move
+			Move move;
+			int x, y;
+			cellToIdx(&board, sourceCell, &x, &y);
+			move.source.x = x;
+			move.source.y = y;
+			cellToIdx(&board, targetCell, &x, &y);
+			move.target.x = x;
+			move.target.y = y;
+
+		    sendMessage(clientStream, MSG_SEND_MOVE, &move);
+
+			board.player = otherPlayer(board.player);
+			sourceCell->isSelected = false;
+			sourceCell = NULL;
+			unmarkCandidates(&board);
+		}
+	}
 }
 
 void UpdatePlayScreen()
 {
 	if (multiplayerMode == 0) {
-		SinglePlayerUpdatePlayScreen();
+	    LocalPlayerUpdatePlayScreen();
 	} else {
 		MultiPlayerUpdatePlayScreen();
 	}
@@ -127,13 +177,16 @@ void DrawPlayScreen()
 
 	// Draw curent player
 	char playerText[16];
-	if (board.player == PLAYER_WHITE) {
-		snprintf(playerText, 5+1, "%s", "White");
-	} else {
-		snprintf(playerText, 5+1, "%s", "Black");
-	}
-	sprintf(playerText+5, "'s Turn");
+	char *s = stpcpy(playerText, (board.player == PLAYER_WHITE) ? "White":"Black");
+	stpcpy(s, "'s Turn");
 	DrawText(playerText, offset.x, offset.y-cellSize, 30, BLACK);
+
+	if (multiplayerMode) {
+		s = stpcpy(playerText, "You're ");
+		stpcpy(s, (clientPlayer == PLAYER_WHITE) ? "White":"Black");
+		DrawText(playerText, offset.x+5*cellSize, offset.y-2*cellSize, 30, BLACK);
+	}
+
 
 	// Draw Border
 	DrawRectangleLinesEx((Rectangle){offset.x - borderThickness,offset.y - borderThickness,

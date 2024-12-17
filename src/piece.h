@@ -1,11 +1,12 @@
 #ifndef PIECE_H_
 #define PIECE_H_
 
-typedef enum Player {
+enum Player {
 	PLAYER_NONE,
 	PLAYER_WHITE,
 	PLAYER_BLACK,
-} Player;
+} __attribute__ ((packed));
+typedef enum Player Player;
 
 typedef enum Piece {
 	PIECE_NONE,

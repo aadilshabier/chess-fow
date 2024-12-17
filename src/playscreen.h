@@ -8,6 +8,7 @@
 
 extern Texture2D spriteTexture;
 extern const int cellSize;
+extern Board board;
 
 extern GameState _PLAYSTATEOBJ;
 

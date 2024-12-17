@@ -9,5 +9,6 @@ void UpdateMultiScreen();
 void DrawMultiScreen();
 
 extern GameState _MULTISTATEOBJ;
+extern Player clientPlayer;
 
 #endif // MULTI_SCREEN_H_

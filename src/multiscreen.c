@@ -26,6 +26,7 @@ static PlayerToggleState playerToggle;
 
 const char* HOST = "127.0.0.1";
 const int PORT = 12345;
+Player clientPlayer;
 
 void InitMultiScreen(void *playerTogglePtr)
 {
@@ -42,12 +43,15 @@ static void DrawTextMiddle(const char *text)
 }
 
 #include <stdio.h>
+
 void UpdateMultiScreen()
 {
 	dyad_update();
 
 	if (playerState == PLAYER_STATE_NONE) {
 		clientStream = dyad_newStream();
+		dyad_setNoDelay(clientStream, true);
+		/* dyad_setTimeout(clientStream, 1); */
 		dyad_addListener(clientStream, DYAD_EVENT_ERROR,  onError,  NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_CONNECT, onConnect, NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_DATA, onData, NULL);
@@ -58,14 +62,10 @@ void UpdateMultiScreen()
 		}
 	} else if (playerState == PLAYER_STATE_CONNECTED) {
 		// TODO: send preference
-		Message *message = makeMessage(MSG_REQUEST_GAME, NULL);
-		char data[1024];
-		serializeMessage(message, data);
-		dyad_write(clientStream, data, message->length);
+	    sendMessage(clientStream, MSG_REQUEST_GAME, NULL);
 		playerState = PLAYER_STATE_SENT_REQ;
-		freeMessage(message);
 	} else if (playerState == PLAYER_STATE_PLAYING) {
-		replaceGameState(GAME_STATE_PLAY, NULL);
+		replaceGameState(GAME_STATE_PLAY, &clientPlayer);
 	}
 }
 

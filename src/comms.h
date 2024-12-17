@@ -44,6 +44,7 @@ typedef struct Message {
 	MessageType type;
 	/* uint64_t key; */
     union {
+		Player player;
 		char *data;
 		Move move;
 		Update update;
@@ -53,6 +54,7 @@ typedef struct Message {
 Message *makeMessage(MessageType type, const void *data);
 void freeMessage(Message *message);
 void serializeMessage(const Message *message, void *data);
+Message sendMessage(void *stream, MessageType type, const void *data);
 Message *deSerializeMessage(void *data);
 
 #endif // COMMS_H_

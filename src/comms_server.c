@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "dyad.h"
 
@@ -21,16 +22,36 @@ void onListen(dyad_Event *e) {
 	printf("Server listening on localhost:%d\n", dyad_getPort(e->stream));
 }
 
+static bool readyToPlay(Match *match)
+{
+	if (match->activePlayers < 2)
+		return false;
+
+	for (int i=0; i<2; i++) {
+		if (match->players[i].state != PLAYER_STATE_SENT_REQ)
+			return false;
+	}
+
+	return true;
+}
+
+static void broadcastStartGame(Match *match)
+{
+	for (int i=0; i<2; i++) {
+		PlayerConn *player = &match->players[i];
+		player->state = PLAYER_STATE_PLAYING;
+		// TODO: Randomize
+		player->player = (Player)(i+1);
+		sendMessage(player->stream, MSG_START_GAME, &player->player);
+	}
+}
+
 void onAccept(dyad_Event *e) {
 	Match *match = e->udata;
 	if (match->activePlayers >= 2) {
 		const char *content = "ERROR: No space in the server!";
 		fprintf(stderr, "%s\n", content);
-		Message *message = makeMessage(MSG_ERROR, content);
-		char buffer[1024];
-		serializeMessage(message, buffer);
-		dyad_write(e->remote, &message, sizeof(message));
-		freeMessage(message);
+		sendMessage(e->remote, MSG_ERROR, content);
 		dyad_end(e->stream);
 		return;
 	};
@@ -55,14 +76,21 @@ static bool expect(const char *name, int expected, int value) {
 	return false;
 }
 
+static int getPlayerId(const Match *match, dyad_Stream *stream)
+{
+	for (int i=0; i<match->activePlayers; i++) {
+		if (match->players[i].stream == stream)
+			return i;
+	}
+	return -1;
+}
+
 void onData(dyad_Event *e)
 {
 	dyad_Stream *stream = e->stream;
 	Match *match = e->udata;
-	int playerIdx = -1;
-	if (match->players[0].stream == stream) playerIdx = 0;
-	else if (match->players[1].stream == stream) playerIdx = 1;
-	else {
+	int playerIdx = getPlayerId(match, stream);
+	if (playerIdx < 0) {
 		fprintf(stderr, "ERROR: fd = %d is nout found\n", dyad_getSocket(stream));
 		return;
 	}
@@ -76,27 +104,36 @@ void onData(dyad_Event *e)
 	PlayerConn *player = &match->players[playerIdx];
 	MessageType type = message->type;
 	if (type == MSG_REQUEST_GAME) {
-		if (expect("connected state", player->state, PLAYER_STATE_CONNECTED)) {
+		if (expect("connected state", PLAYER_STATE_CONNECTED, player->state)) {
 			return;
 		}
 		// TODO: read preference
-		Message *message = makeMessage(MSG_REQUEST_RECVD, NULL);
-		char buffer[1024];
-		serializeMessage(message, buffer);
-		dyad_write(player->stream, buffer, message->length);
-		freeMessage(message);
+		sendMessage(player->stream, MSG_REQUEST_RECVD, NULL);
 
 		player->state = PLAYER_STATE_SENT_REQ;
+
+		// hack to hide the fact that I don't have a stream reader :)
+		// TODO: use a message queue instead
+		dyad_update();
+		// required to stop the messages from coalescing
+		sleep(1);
+		if (readyToPlay(match)) {
+			broadcastStartGame(match);
+		}
 	} else if (type == MSG_SEND_MOVE) {
-		if (expect("ready state", player->state, PLAYER_STATE_PLAYING)) {
+		if (expect("ready state", PLAYER_STATE_PLAYING, player->state)) {
 			return;
 		}
+		int otherPlayerIdx = 1 - playerIdx;
+		dyad_write(match->players[otherPlayerIdx].stream, e->data, message->length);
 	} else if (type == MSG_SEND_UPDATE) {
-		if (expect("ready state", player->state, PLAYER_STATE_PLAYING)) {
+		if (expect("ready state", PLAYER_STATE_PLAYING, player->state)) {
 			return;
 		}
+		int otherPlayerIdx = 1 - playerIdx;
+		dyad_write(match->players[otherPlayerIdx].stream, e->data, message->length);
 	} else if (type == MSG_LEAVE_GAME) {
-		if (expect("playing state", player->state, PLAYER_STATE_PLAYING)) {
+		if (expect("playing state", PLAYER_STATE_PLAYING, player->state)) {
 			return;
 		}
 		fprintf(stderr, "Leaving game unimplemented\n");

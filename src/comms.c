@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "dyad.h"
+
 Message *makeMessage(MessageType type, const void *data)
 {
 	Message *message = malloc(sizeof(Message));
@@ -18,6 +20,9 @@ Message *makeMessage(MessageType type, const void *data)
 	} else if (message->type == MSG_SEND_UPDATE) {
 		message->length += sizeof(message->update);
 		memcpy(&message->update, data, sizeof(message->update));
+	} else if (message->type == MSG_START_GAME) {
+		message->length += sizeof(message->player);
+		memcpy(&message->player, data, sizeof(message->player));
 	} else {
 		if (data != NULL) {
 			message->data = strdup((char*)data);
@@ -32,7 +37,8 @@ Message *makeMessage(MessageType type, const void *data)
 void freeMessage(Message *message)
 {
 	if (message->type != MSG_SEND_MOVE &&
-		message->type != MSG_SEND_UPDATE) {
+		message->type != MSG_SEND_UPDATE &&
+		message->type != MSG_START_GAME) {
 	    free(message->data);
 	}
 	free(message);
@@ -50,8 +56,10 @@ void serializeMessage(const Message *message, void *data)
 
 	if (message->type == MSG_SEND_MOVE) {
 		memcpy(data, &message->move, sizeof(message->move));
-	} if (message->type == MSG_SEND_UPDATE) {
+	} else if (message->type == MSG_SEND_UPDATE) {
 		memcpy(data, &message->update, sizeof(message->update));
+	} else if (message->type == MSG_START_GAME) {
+		memcpy(data, &message->player, sizeof(message->player));
 	} else if (message->data) {
 	    strcpy(data, message->data);
 	}
@@ -73,17 +81,30 @@ Message *deSerializeMessage(void *data)
 	if (message->type == MSG_SEND_MOVE) {
 		static_assert(sizeof(message->move) == 4);
 		message->move = (Move){
-			.source.x = ntohl(*(uint8_t*)(data+0)),
-			.source.y = ntohl(*(uint8_t*)(data+1)),
-			.target.x = ntohl(*(uint8_t*)(data+2)),
-			.target.y = ntohl(*(uint8_t*)(data+3)),
+			.source.x = *(uint8_t*)(data+0),
+			.source.y = *(uint8_t*)(data+1),
+			.target.x = *(uint8_t*)(data+2),
+			.target.y = *(uint8_t*)(data+3),
 		};
 	} else if (message->type == MSG_SEND_UPDATE) {
 		static_assert(sizeof(message->update) == 1);
 		message->update = *(Update*)(data);
+	} else if (message->type == MSG_START_GAME) {
+		static_assert(sizeof(message->player) == 1);
+		message->player = *(Player*)(data);
 	} else if (message->length != offset) {
 		message->data = strdup((char*)(data));
 	}
 	
 	return message;
+}
+
+Message sendMessage(void *stream_, MessageType type, const void *data)
+{
+	dyad_Stream *stream = stream_;
+	Message *message = makeMessage(type, data);
+	char buffer[128];
+	serializeMessage(message, buffer);
+	dyad_write(stream, buffer, message->length);
+	freeMessage(message);
 }

@@ -5,8 +5,10 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "board.h"
 #include "comms.h"
 #include "multiscreen.h"
+#include "playscreen.h"
 
 dyad_Stream *clientStream = NULL;
 PlayerState playerState = PLAYER_STATE_NONE;
@@ -35,21 +37,26 @@ void onData(dyad_Event *e)
 	/* PlayerConn *player = &match->players[playerIdx]; */
 	MessageType type = message->type;
 	if (type == MSG_REQUEST_RECVD) {
-		if (expect("connected state", playerState, PLAYER_STATE_SENT_REQ)) {
+		if (expect("request sent state", PLAYER_STATE_SENT_REQ, playerState)) {
 			return;
 		}
 		playerState = PLAYER_STATE_READY;
 	} else if (type == MSG_START_GAME) {
-		if (expect("ready state", playerState, PLAYER_STATE_SENT_REQ)) {
+		if (expect("ready state", PLAYER_STATE_READY, playerState)) {
 			return;
 		}
+		clientPlayer = message->player;
 		playerState = PLAYER_STATE_PLAYING;
 	} else if (type == MSG_SEND_MOVE) {
-		fprintf(stderr, "Move unimplemented\n");
+		Move move = message->move;
+		Cell *source = &board.cells[move.source.y][move.source.x];
+		Cell *target = &board.cells[move.target.y][move.target.x];
+		MovePiece(source, target);
+		board.player = otherPlayer(board.player);
 	} else if (type == MSG_SEND_UPDATE) {
 		fprintf(stderr, "Update unimplemented\n");
 	} else if (type == MSG_LEAVE_GAME) {
-		if (expect("playing state", playerState, PLAYER_STATE_PLAYING)) {
+		if (expect("playing state", PLAYER_STATE_PLAYING, playerState)) {
 			return;
 		}
 		fprintf(stderr, "Leaving game unimplemented\n");
