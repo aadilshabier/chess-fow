@@ -20,11 +20,12 @@ void onAccept(dyad_Event *e) {
 	if (match->activePlayers >= 2) {
 		const char *content = "ERROR: No space in the server!";
 		fprintf(stderr, "%s\n", content);
-		Message *message = makeMessage(MSG_PLAY_ERROR, content);
+		Message *message = makeMessage(MSG_ERROR, content);
 		char buffer[1024];
 		serializeMessage(message, buffer);
 		dyad_write(e->remote, &message, sizeof(message));
 		freeMessage(message);
+		dyad_end(e->stream);
 		return;
 	};
 	PlayerConn player = {
@@ -52,11 +53,11 @@ void onData(dyad_Event *e)
 {
 	dyad_Stream *stream = e->stream;
 	Match *match = e->udata;
-	int playerIdx;
+	int playerIdx = -1;
 	if (match->players[0].stream == stream) playerIdx = 0;
 	else if (match->players[1].stream == stream) playerIdx = 1;
 	else {
-		fprintf(stderr, "ERROR: playerIdx=%d is invalid\n", playerIdx);
+		fprintf(stderr, "ERROR: fd = %d is nout found\n", dyad_getSocket(stream));
 		return;
 	}
 
@@ -67,25 +68,37 @@ void onData(dyad_Event *e)
 
 	Message *message = deSerializeMessage(e->data);
 	PlayerConn *player = &match->players[playerIdx];
-	switch (message->type) {
-	case MSG_PLAY_REQUEST:
+	MessageType type = message->type;
+	if (type == MSG_REQUEST_GAME) {
 		if (expect("connected state", player->state, PLAYER_STATE_CONNECTED)) {
 			return;
 		}
-		int otherPlayerIdx = 1 - playerIdx;
+		// TODO: read preference
+		Message *message = makeMessage(MSG_REQUEST_RECVD, NULL);
+		char buffer[1024];
+		serializeMessage(message, buffer);
+		dyad_write(player->stream, buffer, message->length);
+		freeMessage(message);
 
-		break;
-	case MSG_PLAY_CONFIRM:
-		if (expect("ready state", player->state, PLAYER_STATE_PLAY_READY)) {
+		player->state = PLAYER_STATE_SENT_REQ;
+	} else if (type == MSG_SEND_MOVE) {
+		if (expect("ready state", player->state, PLAYER_STATE_PLAYING)) {
 			return;
 		}
-	case MSG_PLAY_LEAVE:
+	} else if (type == MSG_SEND_UPDATE) {
+		if (expect("ready state", player->state, PLAYER_STATE_PLAYING)) {
+			return;
+		}
+	} else if (type == MSG_LEAVE_GAME) {
 		if (expect("playing state", player->state, PLAYER_STATE_PLAYING)) {
 			return;
 		}
 		fprintf(stderr, "Leaving game unimplemented\n");
-		break;
-	case MSG_SEND_MOVE:
+	} else if (type == MSG_ERROR) {
+		const char *data = message->data;
+		fprintf(stderr, "ERROR: %s\n", data);
+	} else {
+		fprintf(stderr, "Shouldn't happen: %d\n", type);
 	}
 }
 

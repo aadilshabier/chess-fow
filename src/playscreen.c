@@ -8,11 +8,12 @@
 #include "board.h"
 #include "loadingscreen.h"
 
-// From main.c
+// From game.c
 extern const int screenWidth;
 extern const int screenHeight;
 extern enum GameStateType state;
 extern const Color bgColor;
+
 extern int multiplayerMode;
 
 Texture2D spriteTexture = {0};
@@ -37,9 +38,10 @@ GameState _PLAYSTATEOBJ = {
 	.exit = NULL,
 };
 
-void InitPlayScreen(void *player_ptr)
+void InitPlayScreen(void *playerPtr)
 {
-	Player player = *(Player*)player_ptr;
+	Player player;
+	player = *(Player*)playerPtr;
 	Image spriteImg = LoadImage(spriteFile);
 	ImageResize(&spriteImg, 6*cellSize, 2*cellSize);
 	spriteTexture = LoadTextureFromImage(spriteImg);

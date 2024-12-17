@@ -11,7 +11,7 @@ extern const int cellSize;
 
 extern GameState _PLAYSTATEOBJ;
 
-void InitPlayScreen(void *player_ptr);
+void InitPlayScreen(void *playerPtr);
 void UpdatePlayScreen();
 void DrawPlayScreen();
 

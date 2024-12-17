@@ -6,17 +6,25 @@
 #include "piece.h"
 
 enum MessageType {
-	MSG_PLAY_REQUEST,
-	MSG_PLAY_RESPONSE,
-	MSG_PLAY_CONFIRM,
-	MSG_PLAY_START,
-	MSG_PLAY_ERROR,
-	MSG_PLAY_LEAVE,
+	MSG_REQUEST_GAME,
+	MSG_REQUEST_RECVD,
+	MSG_START_GAME,
 	MSG_SEND_MOVE,
-	// TODO: this could be much better
-	MSG_SEND_MOVE_GAME_END,
+	MSG_SEND_UPDATE,
+	MSG_ERROR,
+	MSG_LEAVE_GAME,
 } __attribute__ ((packed));
 typedef enum MessageType MessageType;
+
+enum PlayerState {
+	PLAYER_STATE_NONE,
+	PLAYER_STATE_CONNECTED,
+	PLAYER_STATE_SENT_REQ,
+	PLAYER_STATE_READY,
+	PLAYER_STATE_PLAYING,
+	PLAYER_STATE_ENDED,
+}  __attribute__ ((packed));
+typedef enum PlayerState PlayerState;
 
 // TODO: can replace i32 with i8
 typedef struct Move {
@@ -25,13 +33,20 @@ typedef struct Move {
 	} source, target;
 } Move;
 
+enum Update {
+	UPDATE_CHECK,
+	UPDATE_CHECKMATE,
+} __attribute__ ((packed));
+typedef enum Update Update;
+
 typedef struct Message {
 	uint32_t length;
 	MessageType type;
 	/* uint64_t key; */
     union {
-		Move move;
 		char *data;
+		Move move;
+		Update update;
 	};
 } Message;
 

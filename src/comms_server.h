@@ -6,14 +6,6 @@
 #include "comms.h"
 #include "piece.h"
 
-typedef enum PlayerState {
-	PLAYER_STATE_NONE,
-	PLAYER_STATE_CONNECTED,
-	PLAYER_STATE_PLAY_READY, // ready to play
-	PLAYER_STATE_PLAYING,
-} PlayerState;
-
-
 typedef struct PlayerConn {
 	PlayerState state;
     dyad_Stream *stream;

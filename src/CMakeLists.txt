@@ -7,16 +7,22 @@ set_target_properties(dyad PROPERTIES
 )
 
 set(PROJECT_SOURCE_FILES
+  comms.h
+  comms_client.h
   board.h
   gamestate.h
   loadingscreen.h
+  multiscreen.h
   piece.h
   piecemovement.h
   playscreen.h
 
   board.c
+  comms.c
+  comms_client.c
   game.c
   loadingscreen.c
+  multiscreen.c
   piecemovement.c
   playscreen.c
 )
@@ -33,7 +39,7 @@ set(SERVER_SOURCE_FILES
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} raylib)
+target_link_libraries(${PROJECT_NAME} raylib dyad)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)
