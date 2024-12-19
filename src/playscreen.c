@@ -57,9 +57,9 @@ void InitPlayScreen(void *playerPtr)
 	for (int i=0; i<numCells; i++) {
 		for (int j=0; j<numCells; j++) {
 			Vector2 pos = Vector2Add(offset, Vector2Multiply(cellSizeV, (Vector2){j,i}));
-			if (board.player == PLAYER_WHITE) {
+			if (!multiplayerMode || clientPlayer != PLAYER_BLACK) {
 				board.cells[i][j].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
-			} else if (board.player == PLAYER_BLACK) {
+			} else {
 				board.cells[8-i-1][8-j-1].rect = (Rectangle){pos.x, pos.y, cellSize, cellSize};
 			}
 		}
