@@ -51,6 +51,7 @@ void UpdateMultiScreen()
 	if (playerState == PLAYER_STATE_NONE) {
 		clientStream = dyad_newStream();
 		dyad_setNoDelay(clientStream, true);
+		dyad_setUpdateTimeout(1.f/30.f);
 		/* dyad_setTimeout(clientStream, 1); */
 		dyad_addListener(clientStream, DYAD_EVENT_ERROR,  onError,  NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_CONNECT, onConnect, NULL);
