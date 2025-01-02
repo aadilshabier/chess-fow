@@ -26,6 +26,8 @@ Chess with (upcoming) fog of war mode.
 
 ## Features
 
- - [ ] Singleplayer mode
- - [ ] Multiplayer mode
+ - [x] Singleplayer mode
+ - [x] Multiplayer mode
+ - [ ] Castling and en passant
+ - [ ] Check(mates)
  - [ ] Fog-of-war

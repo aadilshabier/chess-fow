@@ -99,7 +99,7 @@ Message *deSerializeMessage(void *data)
 	return message;
 }
 
-Message sendMessage(void *stream_, MessageType type, const void *data)
+void sendMessage(void *stream_, MessageType type, const void *data)
 {
 	dyad_Stream *stream = stream_;
 	Message *message = makeMessage(type, data);
@@ -107,4 +107,90 @@ Message sendMessage(void *stream_, MessageType type, const void *data)
 	serializeMessage(message, buffer);
 	dyad_write(stream, buffer, message->length);
 	freeMessage(message);
+}
+
+void initMessageQueue(MessageQueue *queue)
+{
+	queue->head = NULL;
+    queue->tail = NULL;
+    pthread_mutex_init(&queue->mutex, NULL);
+}
+
+void destroyMessageQueue(MessageQueue *queue)
+{
+    pthread_mutex_lock(&queue->mutex);
+
+    MessageNode *current = queue->head;
+    while (current != NULL) {
+		freeMessage(current->message);
+        MessageNode *temp = current;
+        current = current->next;
+        free(temp);
+    }
+
+    pthread_mutex_unlock(&queue->mutex);
+    pthread_mutex_destroy(&queue->mutex);
+}
+
+void enqueueMessageQueue(MessageQueue *queue, Message *message)
+{
+	MessageNode *node = malloc(sizeof(MessageNode));
+    if (!node) {
+        perror("Failed to allocate memory for new node");
+        exit(EXIT_FAILURE);
+    }
+    node->message = message;
+    node->next = NULL;
+
+    pthread_mutex_lock(&queue->mutex);
+
+    if (queue->tail) {
+        queue->tail->next = node;
+    } else {
+        queue->head = node;
+    }
+    queue->tail = node;
+
+    pthread_mutex_unlock(&queue->mutex);
+}
+
+Message *dequeueMessageQueue(MessageQueue *queue)
+{
+    pthread_mutex_lock(&queue->mutex);
+
+    if (queue->head == NULL) {
+        pthread_mutex_unlock(&queue->mutex);
+        return NULL;
+    }
+
+    MessageNode *node = queue->head;
+    Message *message = malloc(sizeof(Message));
+    if (!message) {
+        perror("Failed to allocate memory for message");
+        pthread_mutex_unlock(&queue->mutex);
+        exit(EXIT_FAILURE);
+    }
+    message = node->message;
+    queue->head = node->next;
+
+    if (queue->head == NULL) {
+        queue->tail = NULL;
+    }
+
+    free(node);
+    pthread_mutex_unlock(&queue->mutex);
+
+    return message;
+}
+
+void readMessagesToQueue(char *data, int size, MessageQueue *queue)
+{
+	int offset = 0;
+	while (offset < size) {
+		Message *message = deSerializeMessage(data+offset);
+		enqueueMessageQueue(queue, message);
+
+		// TODO: error checks
+		offset += message->length;
+	}
 }

@@ -2,6 +2,7 @@
 #define COMMS_H_
 
 #include <stdint.h>
+#include <pthread.h>
 
 #include "piece.h"
 
@@ -51,10 +52,31 @@ typedef struct Message {
 	};
 } Message;
 
+typedef struct MessageNode {
+    Message *message;
+    struct MessageNode *next;
+} MessageNode;
+
+typedef struct MessageQueue {
+    MessageNode *head;
+    MessageNode *tail;
+    pthread_mutex_t mutex;
+} MessageQueue;
+
 Message *makeMessage(MessageType type, const void *data);
 void freeMessage(Message *message);
 void serializeMessage(const Message *message, void *data);
-Message sendMessage(void *stream, MessageType type, const void *data);
+void sendMessage(void *stream, MessageType type, const void *data);
 Message *deSerializeMessage(void *data);
+
+// Message Queue
+void initMessageQueue(MessageQueue *msgQueue);
+void destroyMessageQueue(MessageQueue *msgQueue);
+void enqueueMessageQueue(MessageQueue *msgQueue, Message *message);
+Message *dequeueMessageQueue(MessageQueue *msgQueue);
+
+// Drain messages from data buffer to queue
+void readMessagesToQueue(char *data, int size, MessageQueue *queue);
+
 
 #endif // COMMS_H_

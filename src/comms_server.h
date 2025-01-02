@@ -9,6 +9,7 @@
 typedef struct PlayerConn {
 	PlayerState state;
     dyad_Stream *stream;
+	MessageQueue queue;
 	Player player;
 } PlayerConn;
 
