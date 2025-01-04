@@ -3,6 +3,7 @@
 #include <raylib.h>
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "comms.h"
@@ -42,17 +43,16 @@ static void DrawTextMiddle(const char *text)
 	DrawText(text, (screenWidth-width)/2, screenHeight/2, fontSize, BLACK);
 }
 
-#include <stdio.h>
-
 void UpdateMultiScreen()
 {
 	dyad_update();
 
 	if (playerState == PLAYER_STATE_NONE) {
 		clientStream = dyad_newStream();
+		initMessageQueue(&msgQueue);
 		dyad_setNoDelay(clientStream, true);
+		// need for 30 fps responsiveness
 		dyad_setUpdateTimeout(1.f/30.f);
-		/* dyad_setTimeout(clientStream, 1); */
 		dyad_addListener(clientStream, DYAD_EVENT_ERROR,  onError,  NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_CONNECT, onConnect, NULL);
 		dyad_addListener(clientStream, DYAD_EVENT_DATA, onData, NULL);
@@ -67,6 +67,27 @@ void UpdateMultiScreen()
 		playerState = PLAYER_STATE_SENT_REQ;
 	} else if (playerState == PLAYER_STATE_PLAYING) {
 		replaceGameState(GAME_STATE_PLAY, &clientPlayer);
+	}
+
+	// handle any received messages
+	while (true) {
+		Message *message = dequeueMessageQueue(&msgQueue);
+		if (!message) break;
+		MessageType type = message->type;
+		if (type == MSG_REQUEST_RECVD) {
+			if (expect("request sent state", PLAYER_STATE_SENT_REQ, playerState)) {
+			    break;
+			}
+			playerState = PLAYER_STATE_READY;
+		} else if (type == MSG_START_GAME) {
+			if (expect("ready state", PLAYER_STATE_READY, playerState)) {
+				return;
+			}
+			clientPlayer = message->player;
+			playerState = PLAYER_STATE_PLAYING;
+		} else {
+			fprintf(stderr, "Shouldn't happen: %d\n", type);
+		}
 	}
 }
 

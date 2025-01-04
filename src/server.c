@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -11,14 +10,6 @@ const char *HOST = "0.0.0.0";
 const int PORT = 12345;
 
 Match match = {0};
-
-static bool expect(const char *name, int expected, int value) {
-	if (expected != value) {
-		fprintf(stderr, "Expected %s(%d), got %d\n", name, expected, value);
-		return true;
-	}
-	return false;
-}
 
 static bool readyToPlay(Match *match)
 {
@@ -81,11 +72,6 @@ int main()
 
 					player->state = PLAYER_STATE_SENT_REQ;
 
-					// hack to hide the fact that I don't have a stream reader :)
-					// TODO: use a message queue instead
-					dyad_update();
-					// required to stop the messages from coalescing
-					sleep(1);
 					if (readyToPlay(&match)) {
 						broadcastStartGame(&match);
 					}

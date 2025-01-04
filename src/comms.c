@@ -194,3 +194,11 @@ void readMessagesToQueue(char *data, int size, MessageQueue *queue)
 		offset += message->length;
 	}
 }
+
+bool expect(const char *name, int expected, int value) {
+	if (expected != value) {
+		fprintf(stderr, "Expected %s(%d), got %d\n", name, expected, value);
+		return true;
+	}
+	return false;
+}

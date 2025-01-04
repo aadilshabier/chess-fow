@@ -2,6 +2,7 @@
 #define COMMS_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <pthread.h>
 
 #include "piece.h"
@@ -27,7 +28,6 @@ enum PlayerState {
 }  __attribute__ ((packed));
 typedef enum PlayerState PlayerState;
 
-// TODO: can replace i32 with i8
 typedef struct Move {
 	struct {
 		uint8_t x, y;
@@ -78,5 +78,7 @@ Message *dequeueMessageQueue(MessageQueue *msgQueue);
 // Drain messages from data buffer to queue
 void readMessagesToQueue(char *data, int size, MessageQueue *queue);
 
+// Utils
+bool expect(const char *name, int expected, int value);
 
 #endif // COMMS_H_

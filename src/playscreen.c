@@ -1,6 +1,7 @@
 #include "playscreen.h"
 
 #include <stddef.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "raymath.h"
@@ -108,6 +109,32 @@ static void LocalPlayerUpdatePlayScreen()
 static void MultiPlayerUpdatePlayScreen()
 {
 	dyad_update();
+
+	// handle messages
+	while (true) {
+		Message *message = dequeueMessageQueue(&msgQueue);
+		if (!message) break;
+		MessageType type = message->type;
+		if (type == MSG_SEND_MOVE) {
+			Move move = message->move;
+			Cell *source = &board.cells[move.source.y][move.source.x];
+			Cell *target = &board.cells[move.target.y][move.target.x];
+			MovePiece(source, target);
+			board.player = otherPlayer(board.player);
+		} else if (type == MSG_SEND_UPDATE) {
+			fprintf(stderr, "Update unimplemented\n");
+		} else if (type == MSG_LEAVE_GAME) {
+			if (expect("playing state", PLAYER_STATE_PLAYING, playerState)) {
+				return;
+			}
+			fprintf(stderr, "Leaving game unimplemented\n");
+		} else if (type == MSG_ERROR){
+			fprintf(stderr, "ERROR: %s\n", message->data);
+		} else {
+			fprintf(stderr, "Shouldn't happen: %d\n", type);
+		}
+	}
+
 	if (board.player != clientPlayer)
 		return;
 	if (!sourceCell && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
