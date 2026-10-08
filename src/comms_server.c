@@ -24,47 +24,29 @@ void onListen(dyad_Event *e) {
 }
 
 void onAccept(dyad_Event *e) {
-	Match *match = e->udata;
-	if (match->activePlayers >= 2) {
-		const char *content = "ERROR: No space in the server!";
-		fprintf(stderr, "%s\n", content);
+	ServerGamesManager *gamesManager = e->udata;
+
+	// TODO: read preference first before matching to player slot
+	int gameIdx, playerIdx;
+	PlayerConn *player = reservePlayerSlot(gamesManager, &gameIdx, &playerIdx);
+	if (player == NULL) {
+		const char *content = "ERROR: Could not find an available slot!";
+		fputs(content, stderr);
 		sendMessage(e->remote, MSG_ERROR, content);
 		dyad_end(e->stream);
 		return;
-	};
-	PlayerConn player = {
-		.state = PLAYER_STATE_CONNECTED,
-		.stream = e->remote,
-		.player = PLAYER_NONE,
-	};
-	match->players[match->activePlayers] = player;
-	match->activePlayers++;
-	printf("Player number %d connected: %d\n", match->activePlayers, dyad_getSocket(player.stream));
-	// messages might be small
-	dyad_setNoDelay(player.stream, true);
-	dyad_addListener(e->remote, DYAD_EVENT_DATA, onData, match);
-}
-
-static int getPlayerId(const Match *match, dyad_Stream *stream)
-{
-	for (int i=0; i<match->activePlayers; i++) {
-		if (match->players[i].stream == stream)
-			return i;
 	}
-	return -1;
+	printf("Connected game %d, player %d.\n", gameIdx+1, playerIdx+1);
+	*player = makePlayerConn();
+	player->state = PLAYER_STATE_CONNECTED,
+	player->stream = e->remote,
+
+	activatePlayerConn(player);
 }
 
 void onData(dyad_Event *e)
 {
-	dyad_Stream *stream = e->stream;
-	Match *match = e->udata;
-	int playerIdx = getPlayerId(match, stream);
-	if (playerIdx < 0) {
-		fprintf(stderr, "ERROR: fd = %d is nout found\n", dyad_getSocket(stream));
-		return;
-	}
-
-	PlayerConn *player = &match->players[playerIdx];
+	PlayerConn *player = e->udata;
 	// TODO: make sure that messages are read in order too!
 	readMessagesToQueue(e->data, e->size, &player->queue);
 }
@@ -73,21 +55,40 @@ void onError(dyad_Event *e) {
 	fprintf(stderr, "ERROR: Server: %s\n", e->msg);
 }
 
-
-void onClose(dyad_Event *e)
+void onServerClose(dyad_Event */*e*/)
 {
-	dyad_Stream *stream = e->stream;
-	Match *match = e->udata;
-	if (match->players[0].stream == stream) {
-		fprintf(stderr, "Player 0 left the game.\n");
-		memmove(&match->players[0], &match->players[1], sizeof(match->players[0]));
-		match->activePlayers--;
-	} else if (match->players[1].stream == stream) {
-		fprintf(stderr, "Player 1 left the game.\n");
-		match->activePlayers--;
-	} else {
-		fprintf(stderr, "ERROR: should not happen.\n");
-		return;
-	}
+	// Unimplemented
+	return;
 }
 
+void onClientClose(dyad_Event */*e*/) {
+}
+
+void activatePlayerConn(PlayerConn *player) {
+	// messages might be small
+	dyad_setNoDelay(player->stream, true);
+	dyad_addListener(player->stream, DYAD_EVENT_DATA, onData, player);
+	dyad_addListener(player->stream, DYAD_EVENT_CLOSE, onClientClose, player);
+}
+
+PlayerConn *reservePlayerSlot(ServerGamesManager *gamesManager, int *gameIdx, int *playerIdx) {
+	for (int i = 0; i < MAX_GAMES; i++) {
+		Game *game = &gamesManager->games[i];
+		if (game->numPlayers >= 2) continue;
+
+		// set idx values, increment player count, and return
+		if (gameIdx) *gameIdx = i;
+		int playerIdx_ = game->numPlayers;
+		if (playerIdx) *playerIdx = playerIdx_;
+
+		// increment counters
+		++game->numPlayers;
+		++gamesManager->numPlayers;
+		if (game->numPlayers == 1) {
+			++gamesManager->numGames;
+		}
+
+		return &game->players[playerIdx_];
+	}
+	return NULL;
+}

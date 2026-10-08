@@ -13,11 +13,31 @@ typedef struct PlayerConn {
 	Player player;
 } PlayerConn;
 
-typedef struct Match {
+// Game handling logic
+// TODO: potentially move out
+typedef struct Game {
     PlayerConn players[2];
-	int activePlayers;
+	int numPlayers;
 	int movesPlayed;
-} Match;
+} Game;
+
+// Add listener to player->stream which drains messages into player->queue
+void activatePlayerConn(PlayerConn *player);
+
+// Player - Game matching logic
+// TODO: potentially move out
+
+#define MAX_GAMES 20
+// Manages the games on this server, is responsible for matching games
+typedef struct ServerGamesManager {
+	Game games[MAX_GAMES];
+	int numGames;
+	int numPlayers;
+} ServerGamesManager;
+
+// Reserves, and returns the next available playerConn slot, or NULL if there was none available
+// Sets gameIdx and playerIdx accordingly
+PlayerConn *reservePlayerSlot(ServerGamesManager *gamesManager, int *gameIdx, int *playerIdx);
 
 PlayerConn makePlayerConn(void);
 
@@ -25,6 +45,7 @@ void onData(dyad_Event *e);
 void onListen(dyad_Event *e);
 void onAccept(dyad_Event *e);
 void onError(dyad_Event *e);
-void onClose(dyad_Event *e);
+void onServerClose(dyad_Event *e);
+void onClientClose(dyad_Event *e);
 
 #endif // COMMS_SERVER_H_
