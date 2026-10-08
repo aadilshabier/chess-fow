@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "comms_client.h"
 #include "dyad.h"
 #include "gamestate.h"
 #include "playscreen.h"
@@ -55,6 +56,10 @@ int main(void)
     //--------------------------------------------------------------------------------------
 	UnloadTexture(spriteTexture);
     CloseWindow();        // Close window and OpenGL context
+	if (clientStream) {
+		dyad_close(clientStream);
+	}
+	dyad_shutdown();
     //--------------------------------------------------------------------------------------
 
     return 0;

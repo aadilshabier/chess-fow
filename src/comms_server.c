@@ -79,11 +79,14 @@ void onClose(dyad_Event *e)
 	dyad_Stream *stream = e->stream;
 	Match *match = e->udata;
 	if (match->players[0].stream == stream) {
+		fprintf(stderr, "Player 0 left the game.\n");
 		memmove(&match->players[0], &match->players[1], sizeof(match->players[0]));
 		match->activePlayers--;
 	} else if (match->players[1].stream == stream) {
+		fprintf(stderr, "Player 1 left the game.\n");
 		match->activePlayers--;
 	} else {
+		fprintf(stderr, "ERROR: should not happen.\n");
 		return;
 	}
 }
