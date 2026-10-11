@@ -8,12 +8,14 @@
 
 #include "dyad.h"
 
-PlayerConn makePlayerConn(void)
-{
+/* static int gPlayerId = 0; */
+
+PlayerConn makePlayerConn(void) {
 	PlayerConn conn = {
 		.state = PLAYER_STATE_NONE,
 		.stream = NULL,
 		.player = PLAYER_NONE,
+		/* .playerId = gPlayerId++, */
 	};
 	initMessageQueue(&conn.queue);
 	return conn;
@@ -38,10 +40,10 @@ void onAccept(dyad_Event *e) {
 	}
 	printf("Connected game %d, player %d.\n", gameIdx+1, playerIdx+1);
 	*player = makePlayerConn();
-	player->state = PLAYER_STATE_CONNECTED,
-	player->stream = e->remote,
+	player->state = PLAYER_STATE_CONNECTED;
+	player->stream = e->remote;
 
-	activatePlayerConn(player);
+	activatePlayerConn(gamesManager, player);
 }
 
 void onData(dyad_Event *e)
@@ -61,14 +63,31 @@ void onServerClose(dyad_Event */*e*/)
 	return;
 }
 
-void onClientClose(dyad_Event */*e*/) {
+void onClientClose(dyad_Event *e) {
+	ServerGamesManager *gamesManager = e->udata;
+	for (int i = 0; i < MAX_GAMES; i++) {
+		Game *game = &gamesManager->games[i];
+		if (game->numPlayers == 0) continue;
+		for (int j = 0; i < 2; j++) {
+			PlayerConn *player = &game->players[j];
+			if (player->stream != e->stream) continue;
+			// clear player entry
+			// TODO: maybe inform other player?
+			player->state = PLAYER_STATE_NONE;
+			player->stream = NULL;
+			player->player = PLAYER_NONE;
+			--game->numPlayers;
+			/* .playerId = gPlayerId++, */
+			return;
+		}
+	}
 }
 
-void activatePlayerConn(PlayerConn *player) {
+void activatePlayerConn(ServerGamesManager* gamesManager, PlayerConn *player) {
 	// messages might be small
 	dyad_setNoDelay(player->stream, true);
 	dyad_addListener(player->stream, DYAD_EVENT_DATA, onData, player);
-	dyad_addListener(player->stream, DYAD_EVENT_CLOSE, onClientClose, player);
+	dyad_addListener(player->stream, DYAD_EVENT_CLOSE, onClientClose, gamesManager);
 }
 
 PlayerConn *reservePlayerSlot(ServerGamesManager *gamesManager, int *gameIdx, int *playerIdx) {

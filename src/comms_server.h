@@ -11,6 +11,7 @@ typedef struct PlayerConn {
     dyad_Stream *stream;
 	MessageQueue queue;
 	Player player;
+	/* int playerId; */
 } PlayerConn;
 
 // Game handling logic
@@ -21,10 +22,6 @@ typedef struct Game {
 	int movesPlayed;
 } Game;
 
-// Add listener to player->stream which drains messages into player->queue
-void activatePlayerConn(PlayerConn *player);
-
-// Player - Game matching logic
 // TODO: potentially move out
 
 #define MAX_GAMES 20
@@ -34,6 +31,12 @@ typedef struct ServerGamesManager {
 	int numGames;
 	int numPlayers;
 } ServerGamesManager;
+
+// Add listener to player->stream which drains messages into player->queue
+// Also add exit handling when client closes the connection.
+void activatePlayerConn(ServerGamesManager* gamesManager, PlayerConn *player);
+
+// Player - Game matching logic
 
 // Reserves, and returns the next available playerConn slot, or NULL if there was none available
 // Sets gameIdx and playerIdx accordingly
