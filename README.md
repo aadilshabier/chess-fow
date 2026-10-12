@@ -30,7 +30,7 @@ Chess with (upcoming) fog of war mode.
 
  - [x] Singleplayer mode
  - [x] Multiplayer mode
- - [ ] Allow multiple games at once
+ - [x] Allow multiple games at once
  - [ ] Castling and en passant
  - [ ] Check(mates)
  - [ ] Pawn promotion

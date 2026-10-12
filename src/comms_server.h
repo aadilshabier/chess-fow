@@ -51,4 +51,8 @@ void onError(dyad_Event *e);
 void onServerClose(dyad_Event *e);
 void onClientClose(dyad_Event *e);
 
+// Given a game, and a playerIdx, we handle the exit by sending disconection
+// signal to the other player
+void handlePlayerExit(Game *game, int playerIdx);
+
 #endif // COMMS_SERVER_H_

@@ -73,11 +73,8 @@ void onClientClose(dyad_Event *e) {
 			if (player->stream != e->stream) continue;
 			// clear player entry
 			// TODO: maybe inform other player?
-			player->state = PLAYER_STATE_NONE;
-			player->stream = NULL;
-			player->player = PLAYER_NONE;
-			--game->numPlayers;
-			/* .playerId = gPlayerId++, */
+			// TODO: update game manager
+			handlePlayerExit(game, j /* playerIdx */);
 			return;
 		}
 	}
@@ -110,4 +107,14 @@ PlayerConn *reservePlayerSlot(ServerGamesManager *gamesManager, int *gameIdx, in
 		return &game->players[playerIdx_];
 	}
 	return NULL;
+}
+
+void handlePlayerExit(Game *game, int playerIdx) {
+	int otherPlayerIdx = 1 - playerIdx;
+	// if already cleared, this was closed by the other client
+	PlayerConn *otherPlayer = &game->players[otherPlayerIdx];
+	if (otherPlayer->stream == NULL) return;
+	sendMessage(otherPlayer->stream, MSG_LEAVE_GAME, NULL);
+	// TODO: we're relying on client to close this connection, do it ourselves as well
+	memset(game, 0, sizeof(*game));
 }

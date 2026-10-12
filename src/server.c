@@ -48,8 +48,10 @@ static void handleGameEvents(Game *game) {
 			Message *message = dequeueMessageQueue(queue);
 			if (!message) break;
 
+			int otherPlayerIdx = -1;
 			MessageType type = message->type;
-			if (type == MSG_REQUEST_GAME) {
+			switch (type) {
+			case MSG_REQUEST_GAME:
 				if (expect("connected state", PLAYER_STATE_CONNECTED, player->state)) {	
 					return /*1*/;
 				}
@@ -61,27 +63,33 @@ static void handleGameEvents(Game *game) {
 				if (readyToPlay(game)) {
 					broadcastStartGame(game);
 				}
-			} else if (type == MSG_SEND_MOVE) {
+				break;
+			case MSG_SEND_MOVE:
 				if (expect("ready state", PLAYER_STATE_PLAYING, player->state)) {
 					return /*1*/;
 				}
-				int otherPlayerIdx = 1 - i;
+				otherPlayerIdx = 1 - i;
 				sendMessage(game->players[otherPlayerIdx].stream, type, &message->move);
-			} else if (type == MSG_SEND_UPDATE) {
+				break;
+			case MSG_SEND_UPDATE:
 				if (expect("ready state", PLAYER_STATE_PLAYING, player->state)) {
 					return /*1*/;
 				}
-				int otherPlayerIdx = 1 - i;
+				otherPlayerIdx = 1 - i;
 				sendMessage(game->players[otherPlayerIdx].stream, type, &message->update);
-			} else if (type == MSG_LEAVE_GAME) {
-				if (expect("playing state", PLAYER_STATE_PLAYING, player->state)) {
-					return /*1*/;
-				}
-				fprintf(stderr, "Leaving game unimplemented\n");
-			} else if (type == MSG_ERROR) {
+				break;
+			case MSG_LEAVE_GAME:
+				handlePlayerExit(game, i /* playerIdx */);
+				/* if (expect("playing state", PLAYER_STATE_PLAYING, player->state)) { */
+				/* 	return /\*1*\/; */
+				/* } */
+				printf("INFO: player %d disconnected. Forwarding to player %d\n", i + 1, 2 - i);
+				break;
+			case MSG_ERROR:
 				const char *data = message->data;
 				fprintf(stderr, "ERROR: %s\n", data);
-			} else {
+				break;
+			default:
 				fprintf(stderr, "Shouldn't happen: %d\n", type);
 			}
 		}

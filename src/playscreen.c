@@ -115,23 +115,28 @@ static void MultiPlayerUpdatePlayScreen()
 		Message *message = dequeueMessageQueue(&msgQueue);
 		if (!message) break;
 		MessageType type = message->type;
-		if (type == MSG_SEND_MOVE) {
+		switch (type) {
+		case MSG_SEND_MOVE:
 			Move move = message->move;
 			Cell *source = &board.cells[move.source.y][move.source.x];
 			Cell *target = &board.cells[move.target.y][move.target.x];
 			MovePiece(source, target);
 			board.player = otherPlayer(board.player);
-		} else if (type == MSG_SEND_UPDATE) {
+			break;
+		case MSG_SEND_UPDATE:
 			fprintf(stderr, "Update unimplemented\n");
-		} else if (type == MSG_LEAVE_GAME) {
-			if (expect("playing state", PLAYER_STATE_PLAYING, playerState)) {
-				return;
-			}
-			fprintf(stderr, "Leaving game unimplemented\n");
-		} else if (type == MSG_ERROR){
+			break;
+		case MSG_LEAVE_GAME:
+			dyad_close(clientStream);
+			printf("INFO: Leaving game as opponent disconnected\n");
+			// TODO: dialog/message for user?
+			replaceGameState(GAME_STATE_LOAD, NULL);
+			break;
+		case MSG_ERROR:
 			fprintf(stderr, "ERROR: %s\n", message->data);
-		} else {
-			fprintf(stderr, "Shouldn't happen: %d\n", type);
+			break;
+		default:
+			fprintf(stderr, "Shouldn't happen: %d\n", type);			
 		}
 	}
 
